@@ -1,0 +1,172 @@
+### Create Atoms, Bonds, and Angles Data Files
+
+import csv
+import numpy as np
+import math
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+
+data=pd.read_csv('tree_skeletonized.csv')
+
+
+x_tree=data.iloc[1:4859,2]
+y_tree=data.iloc[1:4859, 3]
+
+
+######### Before Equilibration #########
+
+#Read the coordinates for the Atoms File
+
+
+with open('Atoms.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x_tree)):
+        print(i+1, " ", 1, " ", 1, " ", float(x_tree.iloc[i]), " ", float(y_tree.iloc[i]), " ", 0)
+ 
+       
+#Create the Contact Matrix and Write the Bonds File
+     
+  
+r=3 #choose a large cutoff to fully connect the structure
+
+
+contact_matrix=np.zeros((len(x_tree), len(x_tree)), dtype=int) 
+
+
+for i in range(len(x_network)):
+    d=[]
+    for j in range(len(x_network)):
+        d.append(math.sqrt((float(y_network.iloc[i])-float(y_network.iloc[j]))**2+(float(x_network.iloc[i])-float(x_network.iloc[j]))**2))
+        if d[j]<r:
+            contact_matrix[i][j]=1 
+
+
+summ=0
+
+
+with open('Bonds.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x_tree)):
+        for j in range(i):
+            if contact_matrix[i][j]==1:
+                summ=summ+1
+                print (summ, " ", 1, " ", i+1, " ",   j+1, file=f )
+
+
+#Write the Angles File         
+
+
+summ=0
+
+
+with open('Angles.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x_tree)):
+        for j in range(len(x_tree)):
+            if contact_matrix[i][j]==1 and j!=i:
+                for k in range(i):
+                    if contact_matrix[j][k]==1 and j!=k:
+                        summ=summ+1
+                        print (summ, " ", 1, " ", i+1, " ",   j+1, " ", k+1, file=f )
+
+
+######### After Equilibration #########
+
+#Check if equilibration worked
+
+
+with open("tree_equilibration.xyz") as file_in:
+	lines=[]
+	for line in file_in:
+		lines.append(line)
+
+
+list_atoms=[]
+
+      
+for i in range(len(lines)):
+    if lines[i]=='Atoms. Timestep: 100000\n':   #last step of the equilibration simulation
+        for j in range(1939):
+            list_atoms.append([lines[i+j+1]])
+
+
+x=[]
+y=[]
+z=[]
+
+
+for i in range(len(list_atoms)):
+	string=list_atoms[i][0]
+	li=string.split(" ")
+	x.append(float(li[0]))
+	y.append(float(li[1]))
+	z.append(float(li[2]))
+	
+
+#Using the Initial Connectivity Matrix, Plot the Histogram of Distance Between Bonded Particles
+
+
+d=[]
+
+
+for i in range(len(x)):
+	for j in range(i):
+		if contact_matrix[i][j]==1:
+			d.append(math.sqrt((x[i]-x[j])**2+(y[i]-y[j])**2+(z[i]-z[j])**2))
+
+
+#Create New Input File, After Equilibration
+
+#Create Atoms File 
+
+
+with open('Atoms.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x)):
+        print(i+1, " ", 1, " ", 1, " ", x[i], " ", y[i], " ", z[i])
+        
+#Create New Contact Matrix and Bonds File
+
+       
+r=1.2  #a large cutoff radius than the equilibrium value 1
+
+
+contact_matrix=np.zeros((len(x), len(x)), dtype=int) 
+
+
+for i in range(len(x)):
+    d=[]
+    for j in range(len(x)):
+        d.append(math.sqrt((y[i]-y[j])**2+(x[i]-x[j])**2)+(z[i]-z[j])**2)
+        if d[j]<r_1:
+            contact_matrix[i][j]=1 
+
+
+summ=0
+
+
+with open('Bonds.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x)):
+        for j in range(i):
+            if contact_matrix[i][j]==1:
+                summ=summ+1
+                print (summ, " ", 1, " ", i+1, " ",   j+1, file=f )
+
+         
+#Create Angles File 
+
+
+summ=0
+
+
+with open('Angles.txt', 'w') as f:
+    sys.stdout=f
+    for i in range(len(x)):
+        for j in range(len(x)):
+            if contact_matrix[i][j]==1 and j!=i:
+                for k in range(i):
+                    if contact_matrix[j][k]==1 and j!=k:
+                        summ=summ+1
+                        print (summ, " ", 1, " ", i+1, " ",   j+1, " ", k+1, file=f )
