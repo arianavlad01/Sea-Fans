@@ -1,0 +1,38 @@
+# LAMMPS File for Initial Equilibration
+
+units lj   #reduced units
+
+atom_style angle 
+
+boundary f f f    #fixed boundaries
+
+read_data Tree_Equilibration.txt
+
+group all type 1
+
+neigh_modify delay 0 every 1 
+neighbor 10 bin
+
+angle_style cosine
+angle_coeff 1 10  
+
+pair_style lj/cut 1.12246152962189
+pair_coeff 1 1 1.0 1.0
+
+bond_style harmonic
+bond_coeff 1 80.0 1.0   #strong attraction
+
+fix 1 all nve
+fix 2 all langevin   1.0 1.0 1.0 2781111
+
+thermo_style	custom step atoms temp epair etotal press
+thermo          1000
+
+group freeze1 id 1:5
+fix 3 freeze1 setforce 0.0 0.0 0.0
+
+dump   1   all   xyz 1000 tree_equilibration.xyz 
+
+timestep 0.001
+run 1000000
+
