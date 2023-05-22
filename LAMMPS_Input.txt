@@ -65,6 +65,7 @@ thermo_modify lost ignore flush yes
 
 dump   1   all   custom   1000  Tree.lammpstrj  id  x y z  ix iy iz type
 dump_modify   1   format line "%d %.5f %.5f %.5f %d %d %d %d"
+dump 2 all local 100 bonds_tree.txt index c_1[1] c_1[2] c_1[3]
 
 timestep 0.001
 
