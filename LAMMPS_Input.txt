@@ -1,0 +1,75 @@
+#LAMMPS File for Dynamic Bead-Spring Simulations
+
+units lj #reduced units
+
+
+atom_style angle
+
+
+boundary        p p p  #periodic boundary
+
+read_data Tree_Input.txt
+
+group structure type 1 2  #structure atoms
+group all type 1 2 3 4
+group nutrients type 3 4  #nutrients atoms
+group parent type 4 
+group bondednutrients dynamic parent every 10   #bonded nutrients atoms
+
+region          nutrients block -5 110 0 100 5 10 side in units box
+
+angle_style cosine
+angle_coeff 1 25
+
+pair_style      hybrid lj/cut 1.12246152962189 lj96/cut 10
+pair_coeff      1 1 lj/cut 1.0 1.0
+pair_coeff      1 2 lj/cut 1.0 1.0
+pair_coeff      2 2 lj/cut 1.0 1.0 
+pair_coeff      1 3 lj96/cut 0.0 1.0
+pair_coeff      2 3 lj96/cut 0.0 1.0
+pair_coeff      3 4 lj/cut 0.0 1.0
+pair_coeff      3 3 lj/cut 0.0 1.0
+pair_coeff      1 4 lj96/cut 0.0 1.0
+pair_coeff      2 4 lj96/cut 0.0 1.0
+pair_coeff      4 4 lj96/cut 0.0 1.0
+
+ 
+bond_style   harmonic
+bond_coeff   1   30.0   1  #attraction for the structure
+bond_coeff   2   100.0   1  #attraction between structure and nutrients
+
+fix 1 all nve
+fix 2 all   langevin   1.0 1.0 1.0 2781115 
+
+
+neigh_modify delay 0 every 1
+neighbor 1 bin
+
+group freeze1 id 1 2 3 4 5 
+fix 3 freeze1 setforce 0.0 0.0 0.0  #freeze stem atoms for tree structure to keep it from moving
+
+fix 4 nutrients deposit 300000 3 10 7777 region nutrients vz -100 -90  #deposit nutrients
+
+fix 5 all bond/create 100 1 3 0.5 2 iparam 1 1 jparam 1 4   #create bonds between the structure atom and the captured nutrient
+
+fix 6 bondednutrients setforce 0.0 0.0 0.0  #fix the bonded nutrient
+
+compute MSD all msd average yes
+fix 7 all ave/time 1 1 1 c_MSD[*] file msd_tree.txt 
+fix 8 all ave/time 1 1 1 c_MSD[4] file msd_tree_tot.txt #compute MSD for all atoms
+
+thermo_style	custom step atoms temp epair etotal press
+thermo          1000
+thermo_modify	temp add
+thermo_modify lost ignore flush yes
+
+dump   1   all   custom   1000  Tree.lammpstrj  id  x y z  ix iy iz type
+dump_modify   1   format line "%d %.5f %.5f %.5f %d %d %d %d"
+
+timestep 0.001
+
+run 1000000
+
+
+
+
