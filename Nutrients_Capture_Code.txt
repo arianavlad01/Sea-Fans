@@ -1,0 +1,36 @@
+### Nutrients Capture Code
+
+import numpy as np
+import math
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+
+#Read Bonds File 
+
+with open("bonds_tree.txt") as file_in:  
+	lines=[]
+	for line in file_in:
+		lines.append(line)
+
+
+bonds_tree_list=[]
+
+
+for i in range(len(lines)):
+	if lines[i]=='ITEM: NUMBER OF ENTRIES\n':
+		bonds_tree_list.append([lines[i+1]])
+
+
+nr_bonds_tree=[]  #total bonds at a specific timestep
+
+
+for i in range(len(bonds_tree_list)):
+	string=bonds_tree_nr[i][0]
+	nr_bonds_tree.append(int(string)-int(bonds_tree_nr[0][0])) #nutrients bonds are structure bonds subtracted from total bonds
+
+
+timesteps=list(range(1001))
+
+
+plt.plot(timesteps, nr_bonds_tree, label='Tree')
