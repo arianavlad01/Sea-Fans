@@ -1,0 +1,152 @@
+### Displacement Calculations Code
+
+import numpy as np
+import math
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+
+####### Read the MSD File #######
+
+
+with open("msd_tree.txt") as file_in:
+	lines=[]
+	for line in file_in:
+		lines.append(line)
+
+
+list_MSD=[]
+      
+
+for i in range(len(lines)):
+    if lines[i]==lines[1]:
+        for j in range(100001):
+            list_MSD.append([lines[i+j+1]])
+
+
+MSD_list_tree =[]  #list of all the atoms' MSD
+
+
+for i in range(len(list_MSD)):
+	string=list_MSD[i][0]
+	li=string.split(" ")
+	MSD_list_tree.append(float(li[1]))
+
+
+MSD_list_tree.sort(reverse=True) #order the MSD decreasingly
+
+top_tree=np.mean(MSD_list_tree[0:290:1]) #select the 15% most dynamic particles for analysis
+
+
+timesteps=list(range(100001))
+
+
+plt.plot(timesteps, MSD_list_tree, 'r.', label='Tree')
+
+
+####### Plot Maximum Displacement #######
+
+
+#Read all the Coordinates 
+
+
+with open("Tree.lammpstrj") as file_in:
+    lines = []
+    for line in file_in:
+        lines.append(line)
+
+        
+list_dist=[]
+
+
+for i in range(1001):
+    list_dist.append([])
+
+        
+count=0
+
+      
+for i in range(len(lines)):
+    if lines[i]=='ITEM: ATOMS id x y z ix iy iz type\n':
+        for j in range(1939):
+            list_dist[count].append([lines[i+j+1]])
+        count=count+1
+
+        
+for i in range(len(list_dist)):
+	for j in range(len(list_dist[0])):
+		string=list_dist[i][j][0]
+		li=string.split(" ")
+		list_dist[i][j][0]=li
+		for k in range(4):
+			list_dist[i][j][0][k]=float(list_dist[i][j][0][k])
+
+x=[]
+y=[] 
+z=[]
+
+
+for i in range(len(list_dist)):
+    x.append(np.zeros(len(list_dist[0])))
+    y.append(np.zeros(len(list_dist[0])))
+    z.append(np.zeros(len(list_dist[0])))
+    
+for i in range(len(list_dist)):
+	for j in range(len(list_dist[0])):
+		index=int(list_dist[i][j][0][0])-1
+		x[i][index]=list_dist[i][j][0][1]
+		y[i][index]=list_dist[i][j][0][2]
+		z[i][index]=list_dist[i][j][0][3]
+
+
+#Compute Displacement for Every Particle at Every Timepoints
+
+
+d=[]
+
+for i in range(1000):
+    d.append(np.zeros(len(list_dist[0])))
+
+
+for i in range(999):
+	for j in range(len(list_dist[0])):
+    		d[i][j]=math.sqrt((x[i][j]-x[i+1][j])**2+(y[i][j]-y[i+1][j])**2+(z[i][j]-z[i+1][j])**2)
+
+
+d_max_tree=[]
+
+dm=0
+
+
+for j in range(len(d[0])):
+	for i in range(len(d)):
+		if dm<d[i][j]:
+			dm=d[i][j]
+	d_max_tree.append(dm)
+	dm=0
+
+		
+points=plt.scatter(x[0], y[0], c=d_max_tree/max(d_max_tree)) #plot the maximum displacement per particle, normalized by the maximum per structure
+
+plt.colorbar(points)
+
+plt.title('Maximum Displacement per Particle (Scaled)')
+          
+plt.xlabel('x Coordinate')
+          
+plt.ylabel('y Coordinate')
+          
+plt.show()
+
+	
+# Video of Displacement at Every Timestep
+
+fig = plt.figure()
+
+viewer=fig.add_subplot(1,1,1)
+
+for i in range(500):
+	viewer.clear() # Clears the previous image
+	points=plt.scatter(x[i], y[i], c=d[i])
+	viewer.imshow(points) # Loads the new image
+	fig.canvas.draw() 
